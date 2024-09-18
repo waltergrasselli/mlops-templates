@@ -51,6 +51,9 @@ jobs:
               --set ${{ inputs.set_param }} -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
               --workspace-name ${{ inputs.workspace_name }} -g ${{ inputs.resource_group }}
           else
+
+            echo "Deployment already exists! Updating..."
+          
             az ml ${{ inputs.endpoint_type }}-deployment update --name ${{ inputs.deployment_name }} --endpoint-name ${{ inputs.endpoint_name }} \
               --set ${{ inputs.set_param }} -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
               --workspace-name ${{ inputs.workspace_name }} -g ${{ inputs.resource_group }}
