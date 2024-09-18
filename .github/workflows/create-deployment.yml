@@ -21,6 +21,9 @@ on:
       deployment_name:
         required: true
         type: string
+      set_param:
+        required: false
+        type: string
     secrets:
       creds:
         required: true
@@ -39,8 +42,16 @@ jobs:
         run: az extension add -n ml -y
       - name: update-extension
         run: az extension update -n ml
-      - name: create-batch-deployment
+      - name: create-deployment
         run: |
-          az ml ${{ inputs.endpoint_type }}-deployment create --name ${{ inputs.deployment_name }} --endpoint ${{ inputs.endpoint_name }} \
-          -f ${{ github.workspace }}/${{ inputs.endpoint_file }} --resource-group ${{ inputs.resource_group }} \
-          --workspace-name ${{ inputs.workspace_name }}
+          DEPLOYMENT_EXISTS=$(az ml ${{ inputs.endpoint_type }}-deployment list --endpoint-name ${{ inputs.endpoint_name }} --workspace-name ${{ inputs.workspace_name }} -g ${{ inputs.resource_group }} -o tsv --query "[?name=='${{ inputs.deployment_name }}'][name]" | wc -l)
+
+          if [[ DEPLOYMENT_EXISTS -ne 1 ]]; then
+            az ml ${{ inputs.endpoint_type }}-deployment create --name ${{ inputs.deployment_name }} --endpoint-name ${{ inputs.endpoint_name }} \
+              --set ${{ inputs.set_param }} -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
+              --workspace-name ${{ inputs.workspace_name }} -g ${{ inputs.resource_group }}
+          else
+            az ml ${{ inputs.endpoint_type }}-deployment update --name ${{ inputs.deployment_name }} --endpoint-name ${{ inputs.endpoint_name }} \
+              --set ${{ inputs.set_param }} -f ${{ github.workspace }}/${{ inputs.endpoint_file }} \
+              --workspace-name ${{ inputs.workspace_name }} -g ${{ inputs.resource_group }}
+          fi
