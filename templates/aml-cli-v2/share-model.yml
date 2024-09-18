@@ -39,3 +39,9 @@ steps:
                           --share-with-name ${{ parameters.shared_model_name }} \
                           --share-with-version ${{ parameters.shared_model_version }} \
                           --set tags.stage=${{ parameters.stage }}
+
+
+        az ml model update  --name ${{ parameters.shared_model_name }} \
+                          --version ${{ parameters.shared_model_version }} \
+                          --registry-name ${{ parameters.registry_name }} \
+                          --set tags.stage=${{ parameters.stage }}
