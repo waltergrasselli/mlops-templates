@@ -1,0 +1,41 @@
+parameters:
+- name: model_name
+  type: string
+- name: model_version
+  type: string
+- name: registry_name
+  type: string
+- name: shared_model_name
+  type: string
+- name: shared_model_version
+  type: string
+- name: stage 
+  type: string
+  values:
+  - dev
+  - test
+  - prod
+
+steps:
+  - task: AzureCLI@2
+    displayName: Share Azure ML model in share registry
+    inputs: 
+      azureSubscription: $(ado_service_connection_rg)
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+
+        # Get the latest version of the model
+        model_version=$(az ml model show --name ${{ parameters.model_name }} \
+                                         -l latest \
+                                         --query version -o tsv )
+
+        # Print the model version
+        echo "Model version: $model_version"
+
+        az ml model share --name ${{ parameters.model_name }} \
+                          --version ${{ parameters.model_version }} \
+                          --registry-name ${{ parameters.registry_name }} \
+                          --share-with-name ${{ parameters.shared_model_name }} \
+                          --share-with-version ${{ parameters.shared_model_version }} \
+                          --set tags.stage=${{ parameters.stage }}
