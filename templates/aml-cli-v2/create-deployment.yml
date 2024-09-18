@@ -20,5 +20,14 @@ steps:
       scriptLocation: inlineScript
       inlineScript: |
         set -o xtrace
-        az ml $(endpoint_type)-deployment create --name ${{ parameters.deployment_name }} --endpoint $(endpoint_name) \
-          -f ${{ parameters.deployment_file }}
+        DEPLOYMENT_EXISTS=$(az ml $(endpoint_type)-deployment list --endpoint-name $(endpoint_name) --workspace-name $(aml_workspace) -g $(resource_group) -o tsv --query "[?name=='${{ parameters.deployment_name }}'][name]" | wc -l)
+
+        if [[ DEPLOYMENT_EXISTS -ne 1 ]]; then
+          az ml $(endpoint_type)-deployment create --name ${{ parameters.deployment_name }} --endpoint-name $(endpoint_name) \
+            --set ${{ parameters.set_param }} -f ${{ parameters.deployment_file }} \
+            --workspace-name $(aml_workspace) -g $(resource_group)
+        else
+          az ml $(endpoint_type)-deployment update --name ${{ parameters.deployment_name }} --endpoint-name $(endpoint_name) \
+            --set ${{ parameters.set_param }} -f ${{ parameters.deployment_file }} \
+            --workspace-name $(aml_workspace) -g $(resource_group)
+        fi
