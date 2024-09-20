@@ -1,0 +1,73 @@
+name: create-deployment
+
+on:
+  workflow_call:
+    inputs:
+      model_name:
+        required: true
+        type: string
+      model_version:
+        required: true
+        type: string
+      registry_name:
+        required: true
+        type: string
+      shared_model_name:
+        required: true
+        type: string
+      shared_model_version:
+        required: true
+        type: string
+      stage:
+        required: true
+        type: string
+        default: dev
+      workspace_name:
+        required: true
+        type: string
+      resource_group:
+        required: true
+        type: string
+    secrets:
+      creds:
+        required: true
+jobs:
+  create-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: "Az CLI login"
+        uses: azure/login@v1
+        with:
+          creds: ${{secrets.creds}}
+          enable-AzPSSession: true
+      - name: install-extension
+        run: az extension add -n ml -y
+      - name: update-extension
+        run: az extension update -n ml
+      - name: create-batch-deployment
+        run: |
+          model_version=$(az ml model show --name ${{ inputs.model_name }} \
+                                         -l latest \
+                                         --query version -o tsv )
+
+          # Print the model version
+          echo "Model version: $model_version"
+
+          az ml model share --name ${{ inputs.model_name }} \
+                          --version ${{ inputs.model_version }} \
+                          --registry-name ${{ inputs.registry_name }} \
+                          --share-with-name ${{ inputs.shared_model_name }} \
+                          --share-with-version ${{ inputs.shared_model_version }} \
+                          --set tags.stage=${{ inputs.stage }} \
+                          --resource-group ${{ inputs.resource_group }} \
+                          --workspace-name ${{ inputs.workspace_name }}
+
+
+          az ml model update  --name ${{ inputs.shared_model_name }} \
+                          --version ${{ inputs.shared_model_version }} \
+                          --registry-name ${{ inputs.registry_name }} \
+                          --set tags.stage=${{ inputs.stage }} \
+                          --resource-group ${{ inputs.resource_group }} \
+                          --workspace-name ${{ inputs.workspace_name }}
