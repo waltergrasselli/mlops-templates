@@ -32,7 +32,7 @@ on:
       creds:
         required: true
 jobs:
-  create-deployment:
+  share-model:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
